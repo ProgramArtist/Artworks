@@ -7,43 +7,41 @@ local Object = require(ObjectOrientedProgramming.Object)
 
 
 
-local Connection = require(script.Connection)
+local Connection = require(script.Parent.Connection)
 
 local private = {}
 local methods = {}
 
--- Calls all connected functions with the given arguments.
+-- Calls all callbacks with the given arguments.
 function methods:fire(...)
-	for connection, func in private[self].connectedFunctions
+	for connection, callback in private[self].callbacks
 	do
-		coroutine.wrap(func)(...)
+		coroutine.wrap(callback)(...)
 	end
 end
 
 -- Connects a function to the event.
 -- Returns a connection object that can be disconnected.
-function methods:connect(func)
-	if type(func) ~= "function"
+function methods:connect(callback)
+	if type(callback) ~= "function"
 	then
 		error("Attempt to connect failed: Passed value is not a function")
 	end
 	
-	local connection = Connection.new(private[self].connectedFunctions, func)
-	private[self].connectedFunctions[connection] = func
-	return connection
+	return Connection.new(private[self].callbacks, callback)
 end
 
--- Connects a function to the event that will only be called once.
-function methods:once(func)
+-- Connects a callback to the event that will only be called once.
+function methods:once(callback)
 	local connection
 	connection = self:connect(function(...)
 		connection:disconnect()
-		func(...)
+		callback(...)
 	end)
 	return connection
 end
 
--- Waits for a signal to be fired and returns the arguments it was given.
+-- Waits for the event to be fired and returns the arguments it was given.
 function methods:wait()
 	local thread = coroutine.running()
 	
@@ -54,6 +52,12 @@ function methods:wait()
 	return coroutine.yield()
 end
 
+-- Disconnects all callbacks to the event.
+function methods:disconnectAll()
+	table.clear(private[self].callbacks)
+end
+
+
 
 local Event = class(methods, Object.class)
 local constructor = {class = Event}
@@ -62,7 +66,7 @@ local constructor = {class = Event}
 function constructor.new()
 	local event = Event(Object.new())
 	
-	private[event] = {connectedFunctions = {}}
+	private[event] = {callbacks = {}}
 	
 	return event
 end
