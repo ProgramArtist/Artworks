@@ -1,5 +1,5 @@
 --!strict
-local Artworks = script.Parent.Parent.Parent
+local Artworks = script.Parent.Parent
 
 local ObjectOrientedProgramming = Artworks.ObjectOrientedProgramming
 local class = require(ObjectOrientedProgramming.class)
@@ -14,8 +14,9 @@ local methods = {}
 function methods:disconnect()
 	if self.connected
 	then
-		private[self].table[self] = nil
+		private[self].callbacks[self] = nil
 		self.connected = false
+		private[self] = nil
 	end
 end
 
@@ -25,12 +26,11 @@ local Connection = class(methods, Object.class)
 local constructor = {class = Connection}
 
 -- Returns a new connection instance.
-function constructor.new(connectedFunctions, func)
+function constructor.new(callbacks, callback)
 	local connection = Connection(Object.new(), {connected = true})
 	
-	private[connection] = {}
-	private[connection].table = connectedFunctions
-	private[connection].func = func
+	callbacks[connection] = callback
+	private[connection] = {callbacks = callbacks}
 	
 	return connection
 end
