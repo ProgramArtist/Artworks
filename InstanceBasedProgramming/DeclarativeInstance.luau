@@ -22,7 +22,7 @@ local function assign(instance : Instance, key, value)
 		elseif typeOfValue == "table"
 		then
 			local object = value[1]
-			local keyOfObject = value[2]
+			local keysOfObject = value[2]
 			local callback = value[3]
 
 			local typeOfObject = typeof(object)
@@ -30,30 +30,36 @@ local function assign(instance : Instance, key, value)
 			if typeOfObject == "table"
 			then
 				local observable = object.changed and object or Observable(object)
-
-				if callback
-				then
-					pcall(Observer.bindToObservable, observable, keyOfObject, function(valueOfObject) 
-						instance[key] = callback(valueOfObject)
-					end)
-				else
-					pcall(Observer.bindToObservable, observable, keyOfObject, function(valueOfObject) 
-						instance[key] = valueOfObject
-					end)
+				
+				for index, keyOfObject in type(keysOfObject) == "table" and keysOfObject or {keysOfObject}
+				do
+					if callback
+					then
+						pcall(Observer.bindToObservable, observable, keyOfObject, function(valueOfObject) 
+							instance[key] = callback(valueOfObject)
+						end)
+					else
+						pcall(Observer.bindToObservable, observable, keyOfObject, function(valueOfObject) 
+							instance[key] = valueOfObject
+						end)
+					end
 				end
 			elseif typeOfObject == "Instance"
 			then
-				local isPropertyOfObject = pcall(function() return object[keyOfObject] end)
-
-				if callback
-				then
-					pcall(isPropertyOfObject and Observer.bindToProperty or Observer.bindToAttribute, object, keyOfObject, function(valueOfObject) 
-						instance[key] = callback(valueOfObject)
-					end)
-				else
-					pcall(isPropertyOfObject and Observer.bindToProperty or Observer.bindToAttribute, object, keyOfObject, function(valueOfObject) 
-						instance[key] = valueOfObject
-					end)
+				for index, keyOfObject in type(keysOfObject) == "table" and keysOfObject or {keysOfObject}
+				do
+					local isPropertyOfObject = pcall(function() return object[keyOfObject] end)
+					
+					if callback
+					then
+						pcall(isPropertyOfObject and Observer.bindToProperty or Observer.bindToAttribute, object, keyOfObject, function(valueOfObject) 
+							instance[key] = callback(valueOfObject)
+						end)
+					else
+						pcall(isPropertyOfObject and Observer.bindToProperty or Observer.bindToAttribute, object, keyOfObject, function(valueOfObject) 
+							instance[key] = valueOfObject
+						end)
+					end
 				end
 			end
 		else
